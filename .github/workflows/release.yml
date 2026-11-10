@@ -1,0 +1,44 @@
+# Publie une release à chaque étiquette vX.Y.Z : archive em-consent.zip (dossier em-consent/, sans
+# les fichiers de développement marqués export-ignore dans .gitattributes), que les sites
+# téléchargent par la mise à jour native de WordPress (includes/class-em-consent-updater.php).
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Vérifier que la version correspond à l'étiquette
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          ENTETE=$(sed -n 's/^ \* Version:[[:space:]]*//p' em-consent.php | tr -d '\r')
+          CONSTANTE=$(sed -n "s/^define( 'EM_CONSENT_VERSION', '\(.*\)' );/\1/p" em-consent.php)
+          echo "Étiquette $TAG, en-tête $ENTETE, constante $CONSTANTE"
+          test "$TAG" = "$ENTETE" && test "$TAG" = "$CONSTANTE"
+
+      - name: Construire l'archive
+        run: git archive --format=zip --prefix=em-consent/ -o em-consent.zip "$GITHUB_REF_NAME"
+
+      - name: Notes de version tirées du CHANGELOG
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          awk -v v="$VERSION" '
+            $0 ~ "^## \\[" v "\\]" { dedans = 1; next }
+            dedans && /^## \[/ { exit }
+            dedans { print }
+          ' CHANGELOG.md > notes.md
+          test -s notes.md || echo "Voir CHANGELOG.md." > notes.md
+
+      - name: Créer la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" em-consent.zip --title "EM Consent ${GITHUB_REF_NAME#v}" --notes-file notes.md

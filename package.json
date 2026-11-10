@@ -1,0 +1,13 @@
+{
+  "name": "em-consent",
+  "private": true,
+  "type": "module",
+  "description": "Tests navigateur d'EM Consent (Playwright, axe-core).",
+  "scripts": {
+    "test": "node tests/consentement.mjs"
+  },
+  "devDependencies": {
+    "axe-core": "4.10.3",
+    "playwright": "1.55.1"
+  }
+}
