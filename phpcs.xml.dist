@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<ruleset name="EM_CONSENT">
+	<description>Normes de code d'EM Consent : WordPress Coding Standards + compatibilité PHP 7.4+.</description>
+	<file>.</file>
+	<exclude-pattern>/node_modules/*</exclude-pattern>
+	<exclude-pattern>/vendor/*</exclude-pattern>
+	<exclude-pattern>/tests/*</exclude-pattern>
+	<arg name="extensions" value="php"/>
+	<arg value="sp"/>
+	<arg name="colors"/>
+
+	<config name="testVersion" value="7.4-"/>
+	<config name="minimum_wp_version" value="6.5"/>
+
+	<rule ref="WordPress">
+		<!-- Commentaires en français : ponctuation finale libre (« : », « … »). -->
+		<exclude name="Squiz.Commenting.InlineComment.InvalidEndChar"/>
+		<!-- L'opérateur ?: (valeur de repli) est lisible et sûr. -->
+		<exclude name="Universal.Operators.DisallowShortTernary"/>
+		<!-- Les @param sont typés et nommés explicitement : une phrase de plus n'ajoute rien. -->
+		<exclude name="Squiz.Commenting.FunctionComment.MissingParamComment"/>
+	</rule>
+
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="em-consent"/>
+			</property>
+		</properties>
+	</rule>
+
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<properties>
+			<property name="prefixes" type="array">
+				<element value="em_consent"/>
+				<element value="EM_Consent"/>
+				<element value="EM_CONSENT"/>
+			</property>
+		</properties>
+	</rule>
+
+	<rule ref="PHPCompatibilityWP"/>
+</ruleset>
