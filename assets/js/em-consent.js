@@ -87,6 +87,26 @@
 			'; Max-Age=' + cfg.jours * 86400 + '; Path=/; SameSite=Lax' +
 			(location.protocol === 'https:' ? '; Secure' : '');
 
+		// Un consentement retiré : les scripts déjà exécutés ne se déchargent pas. On coupe GA4,
+		// on efface les témoins de la catégorie et on recharge la page, qui repart sans eux. Aucune
+		// mise à jour n'est envoyée à Google : GA4 y répond par un dernier envoi vers ses serveurs.
+		var retire = avant && CATS.some(function (k) {
+			return avant.c[k] && !state.c[k];
+		});
+		if (retire) {
+			if (avant.c.mesure && !state.c.mesure) {
+				couperGa4();
+			}
+			couperEnvois();
+			CATS.forEach(function (k) {
+				if (avant.c[k] && !state.c[k]) {
+					effacer(k);
+				}
+			});
+			location.reload();
+			return;
+		}
+
 		updateGoogle();
 		var detail = choixActuels();
 		w.dataLayer.push({ event: 'em_consent_update', em_consent_mesure: !!detail.mesure, em_consent_marketing: !!detail.marketing });
@@ -96,21 +116,6 @@
 			} catch (e) {}
 		});
 		d.dispatchEvent(new CustomEvent('em-consent:change', { detail: detail }));
-
-		// Un consentement retiré : les scripts déjà exécutés ne se déchargent pas. On efface leurs
-		// témoins et on recharge la page, qui repart sans eux.
-		var retire = avant && CATS.some(function (k) {
-			return avant.c[k] && !state.c[k];
-		});
-		if (retire) {
-			CATS.forEach(function (k) {
-				if (avant.c[k] && !state.c[k]) {
-					effacer(k);
-				}
-			});
-			location.reload();
-			return;
-		}
 		apply();
 	}
 
@@ -140,6 +145,34 @@
 		var k = granted('marketing') ? 'granted' : 'denied';
 		w.gtag('consent', 'update', { analytics_storage: a, ad_storage: k, ad_user_data: k, ad_personalization: k });
 		w.gtag('set', 'ads_data_redaction', k === 'denied');
+	}
+
+	function couperGa4() {
+		var ids = Object.keys(w.google_tag_manager || {}).concat(cfg.ga4 ? [cfg.ga4] : []);
+		ids.forEach(function (id) {
+			if (/^G-/.test(id)) {
+				w['ga-disable-' + id] = true;
+			}
+		});
+	}
+
+	// Au retrait seulement, juste avant le rechargement : GA4 et les pixels envoient un dernier
+	// événement à la fermeture de la page (sendBeacon ou fetch). On le retient.
+	function couperEnvois() {
+		var re = new RegExp(cfg.traqueurs || '$^');
+		var beacon = navigator.sendBeacon;
+		var fetchOrig = w.fetch;
+		if (beacon) {
+			navigator.sendBeacon = function (url) {
+				return re.test(String(url)) ? true : beacon.apply(navigator, arguments);
+			};
+		}
+		if (fetchOrig) {
+			w.fetch = function (req) {
+				var url = req && req.url ? req.url : String(req);
+				return re.test(url) ? Promise.resolve(new Response(null, { status: 204 })) : fetchOrig.apply(w, arguments);
+			};
+		}
 	}
 
 	function addScript(src) {

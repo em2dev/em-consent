@@ -16,7 +16,7 @@ Première version.
 - Blocage des iframes de services tiers dans le contenu (YouTube, Vimeo, Google Maps, Calendly, réseaux sociaux…), avec avis et bouton d'autorisation ; filtre `em_consent_iframe_domains`.
 - Lien « Gestion des témoins » : tout lien vers `#em-consent` et le code court `[em_consent_gestion]` rouvrent les préférences.
 - Choix gardé dans le témoin nécessaire `em_consent` (12 mois par défaut, de 1 à 13) ; consentement redemandé quand les catégories changent ou d'un clic.
-- Retrait du consentement : témoins de la catégorie effacés et page rechargée.
+- Retrait du consentement : GA4 coupé (`ga-disable-…`), envois de fermeture des traqueurs connus retenus, témoins de la catégorie effacés et page rechargée.
 - Textes par langue (WPML, Polylang ou langue du site), français et anglais par défaut, modifiables dans l'admin.
 - Page Réglages → Témoins : Général, Textes, Apparence (couleurs, arrondi, avertissement de contraste), Scripts, Outils (redemander, export, import, réinitialisation).
 - API JavaScript `emConsent` et événement `em-consent:change` ; fonction PHP `em_consent_has()`.

@@ -72,6 +72,8 @@ class EM_Consent_Front {
 			'gtm'         => (string) EM_Consent_Settings::get( 'gtm_id' ),
 			'ga4'         => (string) EM_Consent_Settings::get( 'ga4_id' ),
 			'consentMode' => true,
+			// Envois retenus pendant le retrait du consentement (expression régulière sur l'adresse).
+			'traqueurs'   => 'google-analytics\.com|analytics\.google\.com|googletagmanager\.com|google\.[a-z.]+/(g|ccm|pagead)/|doubleclick\.net|facebook\.com/tr|clarity\.ms|hotjar\.(com|io)|linkedin\.com/(px|collect)|analytics\.tiktok\.com|bat\.bing\.com',
 			// Témoins effacés quand une catégorie est retirée (préfixes de noms).
 			'effacer'     => array(
 				'mesure'    => array( '_ga', '_gid', '_gat', '_clck', '_clsk', '_hj' ),

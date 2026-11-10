@@ -109,13 +109,46 @@ ok(charges.some((u) => u.includes('gtm.js')), 'GTM chargé après l’accord');
 ok(charges.some((u) => u.includes('gtag/js')), 'GA4 chargé après l’accord');
 const maj = await page.evaluate(() => window.dataLayer.some((e) => e && e[0] === 'consent' && e[1] === 'update' && e[2].analytics_storage === 'granted'));
 ok(maj, 'mode de consentement : analytics_storage accordé');
+const etat = await page.evaluate(() => ({
+  enLigne: document.querySelector('[data-em-consent-actif]') !== null,
+  test: window.emTestMesure,
+  handle: window.emTestHandle,
+  apres: window.emTestApres,
+  restants: document.querySelectorAll('script[type="text/plain"][data-em-consent="mesure"]').length,
+}));
+ok(etat.restants === 0, 'tous les scripts « mesure » bloqués sont réactivés');
+if (etat.test !== undefined) ok(etat.test === 1, 'script en ligne bloqué exécuté après l’accord');
+if (etat.handle !== undefined) ok(etat.handle === 1 && etat.apres === 1, 'script déclaré par em_consent_scripts exécuté, dans l’ordre (fichier puis script en ligne)');
 
-// 4. Retrait : la page se recharge sans GTM ni GA4.
+// Iframe bloquée : l'avis et son bouton.
+if (await page.$('[data-em-consent-autoriser]')) {
+  requetes = [];
+  await page.focus('[data-em-consent-autoriser]');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(1500);
+  ok(await page.$('.em-consent-bloque') === null, 'le bouton de l’avis débloque l’iframe');
+  ok(requetes.some((u) => /youtube/.test(u)), 'la vidéo se charge après l’accord au marketing');
+  el = await page.evaluate(() => document.activeElement.tagName);
+  ok(el === 'IFRAME', 'le focus passe à l’iframe débloquée');
+}
+
+// 4. Retrait : la page n'envoie plus rien et se recharge sans GTM ni GA4. Une iframe déjà chargée
+// avec l'accord (vidéo) peut encore signaler sa propre fermeture : hors de portée de la page.
 await page.click('a[href$="#em-consent"]');
 await page.waitForTimeout(300);
+const parLaPage = [];
+const surveiller = (r) => {
+  if (r.frame() === page.mainFrame() && new URL(r.url()).hostname !== HOTE) parLaPage.push(new URL(r.url()).hostname);
+};
+page.on('request', surveiller);
+await Promise.all([page.waitForNavigation({ waitUntil: 'commit' }), page.click('#em-consent-preferences [data-em-consent-action="refuser"]')]);
 requetes = [];
-await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle' }), page.click('#em-consent-preferences [data-em-consent-action="refuser"]')]);
-ok(tiers().length === 0, `après retrait du consentement, aucun domaine tiers${tiers().length ? ' : ' + tiers().join(', ') : ''}`);
+await page.waitForLoadState('networkidle');
+page.off('request', surveiller);
+ok(parLaPage.length === 0, `au retrait, la page n'envoie rien à un tiers${parLaPage.length ? ' : ' + [...new Set(parLaPage)].join(', ') : ''}`);
+ok(tiers().length === 0, `page rechargée après le retrait : aucun domaine tiers${tiers().length ? ' : ' + tiers().join(', ') : ''}`);
+const efface = (await contexte.cookies()).filter((c) => /^_ga/.test(c.name)).map((c) => c.name);
+ok(efface.length === 0, `témoins _ga effacés${efface.length ? ' : restent ' + efface.join(', ') : ''}`);
 
 // 5. Page anglaise.
 if (URL_EN) {

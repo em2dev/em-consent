@@ -89,11 +89,12 @@
 	text-decoration: underline;
 }
 
+/* !important : certains thèmes retirent le focus partout (« :focus { outline: 0 !important } »). */
 .em-consent :focus-visible,
 .em-consent-preferences :focus-visible,
 .em-consent-bloque :focus-visible {
-	outline: 3px solid var(--em-consent-texte, #1f2328);
-	outline-offset: 2px;
+	outline: 3px solid var(--em-consent-texte, #1f2328) !important;
+	outline-offset: 2px !important;
 }
 
 /* Carte en bas à gauche sur ordinateur ; pleine largeur sur cellulaire. */

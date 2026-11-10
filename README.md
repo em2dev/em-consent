@@ -29,9 +29,9 @@ Consentement aux témoins conforme à la **Loi 25 du Québec**, pour tous les si
 - **Blocage** des scripts (filtre, balisage manuel, scripts personnalisés) et des iframes de services tiers dans le contenu (YouTube, Vimeo, Google Maps, Calendly, réseaux sociaux…).
 - **Lien « Gestion des témoins »** : tout lien vers `#em-consent` (menu, bloc, pied de page) ou le code court `[em_consent_gestion]` rouvre les préférences.
 - **Durée du choix** réglable (12 mois par défaut). Le consentement est redemandé quand les catégories changent, ou d'un clic (« Redemander à tous »).
-- **Retrait du consentement** : les témoins de la catégorie retirée sont effacés et la page se recharge sans ses scripts.
+- **Retrait du consentement** : GA4 est coupé, les envois de dernière minute des traqueurs connus sont retenus, les témoins de la catégorie retirée sont effacés et la page se recharge sans ses scripts.
 - **Textes par langue**, modifiables par le client, en français et en anglais par défaut. Compatible WPML et Polylang, sans String Translation ni correctif.
-- **Accessibilité WCAG 2.2 AA** et **performance** : aucun jQuery, aucun appel externe, moins de 4 Ko de JS et 2 Ko de CSS une fois compressés.
+- **Accessibilité WCAG 2.2 AA** et **performance** : aucun jQuery, aucun appel externe, environ 4 Ko de JS et 2 Ko de CSS une fois compressés (gzip).
 - **Mises à jour** depuis les releases GitHub, par le mécanisme natif de WordPress.
 
 ## Installation et mises à jour
@@ -153,7 +153,7 @@ Le témoin `em_consent` (nécessaire, `SameSite=Lax`, `Secure` en HTTPS) contien
 | `em_consent_scripts` | Handles à bloquer : `handle => catégorie`. |
 | `em_consent_iframe_domains` | Domaines des iframes bloquées : `domaine => catégorie`. |
 | `em_consent_enabled` | Active ou non l'extension sur la page affichée. |
-| `em_consent_config` | Configuration du JS (`consentMode` à `false` retire le mode de consentement ; `effacer` liste les préfixes de témoins effacés au retrait). |
+| `em_consent_config` | Configuration du JS (`consentMode` à `false` retire le mode de consentement ; `effacer` liste les préfixes de témoins effacés au retrait ; `traqueurs`, l’expression des envois retenus au retrait). |
 | `em_consent_settings` | Réglages lus (par exemple imposer un identifiant GTM). |
 | `em_consent_schema` | Schéma des réglages. |
 | `em_consent_text_definitions` | Libellés et textes par défaut. |
@@ -166,6 +166,7 @@ Le témoin `em_consent` (nécessaire, `SameSite=Lax`, `Secure` en HTTPS) contien
 - Un script écrit en dur par une extension tierce, sans `wp_enqueue_script`, n'est pas bloqué : EM Consent ne réécrit pas la page entière (cela coûterait en performance et casserait le cache). Collez-le plutôt dans l'onglet Scripts et désactivez-le dans l'extension.
 - Les iframes sont bloquées dans le contenu (`the_content`), pas dans les gabarits du thème ni les widgets : balisez-les vous-même.
 - Un élément d'une catégorie non proposée reste bloqué pour toujours ; un avertissement le signale dans l'admin.
+- Au retrait du consentement, une iframe déjà chargée avec l’accord (une vidéo YouTube, par exemple) peut encore signaler sa propre fermeture à son service : la page ne peut pas l’en empêcher.
 
 ## Développement
 
