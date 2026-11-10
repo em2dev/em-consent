@@ -188,6 +188,10 @@ JS;
 			'--em-consent-bouton-texte'  => EM_Consent_Settings::get( 'couleur_bouton_texte' ),
 			'--em-consent-arrondi'       => absint( EM_Consent_Settings::get( 'arrondi' ) ) . 'px',
 			'--em-consent-arrondi-petit' => round( absint( EM_Consent_Settings::get( 'arrondi' ) ) * 0.75 ) . 'px',
+			'--em-consent-largeur'       => absint( EM_Consent_Settings::get( 'largeur' ) ) . 'px',
+			'--em-consent-marge'         => absint( EM_Consent_Settings::get( 'marge' ) ) . 'px',
+			'--em-consent-taille'        => absint( EM_Consent_Settings::get( 'taille_texte' ) ) . 'px',
+			'--em-consent-police'        => 'systeme' === EM_Consent_Settings::get( 'police' ) ? 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' : 'inherit',
 		);
 
 		/**
@@ -215,19 +219,24 @@ JS;
 		self::$printed = true;
 
 		$categories = EM_Consent_Settings::active_categories();
-		$position   = 'barre' === EM_Consent_Settings::get( 'position' ) ? 'barre' : 'carte';
-		$policy_url = EM_Consent_Texts::policy_url();
-		$allowed    = EM_Consent_Texts::allowed_html();
+		$position   = sanitize_html_class( (string) EM_Consent_Settings::get( 'position' ) );
+		$type       = in_array( $position, array( 'barre-bas', 'barre-haut' ), true ) ? 'barre' : 'carte';
+
+		list( $policy_url, $policy_label ) = EM_Consent_Texts::policy_link();
+
+		$allowed = EM_Consent_Texts::allowed_html();
 		?>
-<div id="em-consent" class="em-consent em-consent--<?php echo esc_attr( $position ); ?>" role="region" aria-labelledby="em-consent-titre" hidden>
+<div id="em-consent" class="em-consent em-consent--<?php echo esc_attr( $type ); ?> em-consent--<?php echo esc_attr( $position ); ?>" role="region" aria-labelledby="em-consent-titre" hidden>
 	<div class="em-consent__boite">
-		<p class="em-consent__titre" id="em-consent-titre"><?php echo esc_html( EM_Consent_Texts::get( 'titre' ) ); ?></p>
-		<p class="em-consent__message">
-			<?php echo wp_kses( EM_Consent_Texts::get( 'message' ), $allowed ); ?>
-			<?php if ( $policy_url ) : ?>
-				<a href="<?php echo esc_url( $policy_url ); ?>"><?php echo esc_html( EM_Consent_Texts::get( 'politique_libelle' ) ); ?></a>
-			<?php endif; ?>
-		</p>
+		<div class="em-consent__texte">
+			<p class="em-consent__titre" id="em-consent-titre"><?php echo esc_html( EM_Consent_Texts::get( 'titre' ) ); ?></p>
+			<p class="em-consent__message">
+				<?php echo wp_kses( EM_Consent_Texts::get( 'message' ), $allowed ); ?>
+				<?php if ( $policy_url ) : ?>
+					<a href="<?php echo esc_url( $policy_url ); ?>"><?php echo esc_html( $policy_label ); ?></a>
+				<?php endif; ?>
+			</p>
+		</div>
 		<div class="em-consent__boutons">
 			<button type="button" class="em-consent__bouton" data-em-consent-action="accepter"><?php echo esc_html( EM_Consent_Texts::get( 'accepter' ) ); ?></button>
 			<button type="button" class="em-consent__bouton" data-em-consent-action="refuser"><?php echo esc_html( EM_Consent_Texts::get( 'refuser' ) ); ?></button>

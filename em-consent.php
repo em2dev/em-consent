@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       EM Consent
  * Plugin URI:        https://github.com/em2dev/em-consent
- * Description:       Consentement aux témoins conforme à la Loi 25 du Québec : bannière Accepter, Refuser et Personnaliser, mode de consentement de Google v2, Google Tag Manager et GA4 chargés seulement après l'accord, scripts et iframes bloqués jusqu'au consentement, textes par langue.
- * Version:           1.0.0
+ * Description:       Consentement aux témoins conforme à la Loi 25 du Québec : bannière Accepter, Refuser et Personnaliser, mode de consentement de Google v2, Google Tag Manager et GA4 chargés seulement après l'accord, scripts et iframes bloqués jusqu'au consentement, page de politique des témoins générée, textes par langue.
+ * Version:           1.1.0
  * Author:            Emsolutions
  * Author URI:        https://www.emsolutions.ca
  * License:           GPL v2 or later
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'EM_CONSENT_VERSION', '1.0.0' );
+define( 'EM_CONSENT_VERSION', '1.1.0' );
 define( 'EM_CONSENT_FILE', __FILE__ );
 define( 'EM_CONSENT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'EM_CONSENT_URL', plugin_dir_url( __FILE__ ) );
@@ -29,6 +29,7 @@ define( 'EM_CONSENT_URL', plugin_dir_url( __FILE__ ) );
 require_once EM_CONSENT_PATH . 'includes/class-em-consent-settings.php';
 require_once EM_CONSENT_PATH . 'includes/class-em-consent-texts.php';
 require_once EM_CONSENT_PATH . 'includes/class-em-consent-blocker.php';
+require_once EM_CONSENT_PATH . 'includes/class-em-consent-policy.php';
 require_once EM_CONSENT_PATH . 'includes/class-em-consent-front.php';
 require_once EM_CONSENT_PATH . 'includes/class-em-consent-updater.php';
 
@@ -69,6 +70,7 @@ register_activation_hook( __FILE__, 'em_consent_activate' );
 
 EM_Consent_Blocker::init();
 EM_Consent_Front::init();
+EM_Consent_Policy::init();
 EM_Consent_Updater::init();
 
 if ( is_admin() ) {

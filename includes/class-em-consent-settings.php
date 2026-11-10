@@ -78,8 +78,35 @@ class EM_Consent_Settings {
 			'position'             => array(
 				'tab'     => 'apparence',
 				'type'    => 'choice',
-				'default' => 'carte',
-				'choices' => array( 'carte', 'barre' ),
+				'default' => 'bas-gauche',
+				'choices' => array( 'bas-gauche', 'bas-droite', 'bas-centre', 'barre-bas', 'barre-haut', 'centre' ),
+			),
+			'largeur'              => array(
+				'tab'     => 'apparence',
+				'type'    => 'int',
+				'default' => 440,
+				'min'     => 300,
+				'max'     => 720,
+			),
+			'marge'                => array(
+				'tab'     => 'apparence',
+				'type'    => 'int',
+				'default' => 16,
+				'min'     => 0,
+				'max'     => 64,
+			),
+			'taille_texte'         => array(
+				'tab'     => 'apparence',
+				'type'    => 'int',
+				'default' => 16,
+				'min'     => 14,
+				'max'     => 22,
+			),
+			'police'               => array(
+				'tab'     => 'apparence',
+				'type'    => 'choice',
+				'default' => 'theme',
+				'choices' => array( 'theme', 'systeme' ),
 			),
 			'couleur_fond'         => array(
 				'tab'     => 'apparence',
@@ -116,6 +143,24 @@ class EM_Consent_Settings {
 			'scripts_marketing'    => array(
 				'tab'     => 'scripts',
 				'type'    => 'scripts',
+				'default' => '',
+			),
+			'services'             => array(
+				'tab'     => 'politique',
+				'type'    => 'services',
+				'default' => array(),
+			),
+			// Réglages internes : écrits par l'extension, jamais par un formulaire d'onglet.
+			'page_politique'       => array(
+				'tab'     => '_interne',
+				'type'    => 'int',
+				'default' => 0,
+				'min'     => 0,
+				'max'     => PHP_INT_MAX,
+			),
+			'politique_maj'        => array(
+				'tab'     => '_interne',
+				'type'    => 'date',
 				'default' => '',
 			),
 		);
@@ -214,8 +259,11 @@ class EM_Consent_Settings {
 				continue;
 			}
 			if ( ! array_key_exists( $key, $input ) ) {
+				// Cases non cochées : absentes du formulaire envoyé.
 				if ( '' !== $tab && 'bool' === $field['type'] ) {
 					$output[ $key ] = false;
+				} elseif ( '' !== $tab && 'services' === $field['type'] ) {
+					$output[ $key ] = array();
 				}
 				continue;
 			}
@@ -230,13 +278,24 @@ class EM_Consent_Settings {
 			$output['revision'] = max( 1, absint( $input['revision'] ) );
 		}
 
-		// Les catégories ont changé : le choix des visiteurs ne vaut plus, on redemande.
+		// Les catégories ont changé, ou un service s'ajoute : le choix des visiteurs ne vaut plus, on redemande.
 		if ( '' !== $tab ) {
+			$changed = (bool) array_diff( (array) $output['services'], (array) $old['services'] );
 			foreach ( self::CATEGORIES as $category ) {
 				if ( (bool) $old[ 'cat_' . $category ] !== (bool) $output[ 'cat_' . $category ] ) {
-					$output['revision'] = absint( $old['revision'] ) + 1;
-					break;
+					$changed = true;
 				}
+			}
+			if ( $changed ) {
+				$output['revision'] = absint( $old['revision'] ) + 1;
+			}
+		}
+
+		// Ce que décrit la page de politique a changé : sa date de mise à jour suit.
+		foreach ( array( 'cat_mesure', 'cat_marketing', 'gtm_id', 'ga4_id', 'services', 'duree' ) as $key ) {
+			if ( $old[ $key ] != $output[ $key ] || '' === $output['politique_maj'] ) { // phpcs:ignore Universal.Operators.StrictComparisons.LooseNotEqual -- tableaux de services : l'ordre ne compte pas.
+				$output['politique_maj'] = current_time( 'Y-m-d' );
+				break;
 			}
 		}
 
@@ -264,6 +323,15 @@ class EM_Consent_Settings {
 			case 'choice':
 				$value = sanitize_key( (string) $value );
 				return in_array( $value, $field['choices'], true ) ? $value : $field['default'];
+
+			case 'services':
+				$known = array_keys( EM_Consent_Policy::catalog() );
+				$value = array_map( 'sanitize_key', (array) $value );
+				return array_values( array_intersect( $known, $value ) );
+
+			case 'date':
+				$value = (string) $value;
+				return preg_match( '/^\d{4}-\d{2}-\d{2}$/', $value ) ? $value : '';
 
 			case 'color':
 				$value = sanitize_hex_color( (string) $value );

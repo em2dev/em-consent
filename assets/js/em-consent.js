@@ -249,18 +249,25 @@
 
 	/* Bannière et préférences ------------------------------------------------------------- */
 
-	// La bannière ne doit cacher ni la fin de la page ni l'élément qui a le focus (WCAG 2.4.11).
+	// La bannière ne doit cacher ni le début ou la fin de la page ni l'élément qui a le focus
+	// (WCAG 2.4.11) : marge de défilement et espace de même hauteur, en haut ou en bas selon sa
+	// position. Au centre, rien ne peut l'éviter : la position est déconseillée dans l'admin.
 	function ajuster() {
-		if (!banner || banner.hidden) {
+		if (!banner || banner.hidden || banner.classList.contains('em-consent--centre')) {
 			return;
 		}
+		var haut = banner.classList.contains('em-consent--barre-haut');
 		var h = banner.offsetHeight;
-		d.documentElement.style.scrollPaddingBottom = h + 'px';
+		d.documentElement.style[haut ? 'scrollPaddingTop' : 'scrollPaddingBottom'] = h + 'px';
 		if (!espace) {
 			espace = d.createElement('div');
 			espace.className = 'em-consent-espace';
 			espace.setAttribute('aria-hidden', 'true');
-			d.body.appendChild(espace);
+			if (haut) {
+				d.body.insertBefore(espace, d.body.firstChild);
+			} else {
+				d.body.appendChild(espace);
+			}
 		}
 		espace.style.height = h + 'px';
 	}
@@ -279,6 +286,7 @@
 		}
 		banner.hidden = true;
 		d.documentElement.style.scrollPaddingBottom = '';
+		d.documentElement.style.scrollPaddingTop = '';
 		if (espace) {
 			espace.remove();
 			espace = null;

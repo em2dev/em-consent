@@ -40,6 +40,7 @@ class EM_Consent_Admin {
 			'textes'    => __( 'Textes', 'em-consent' ),
 			'apparence' => __( 'Apparence', 'em-consent' ),
 			'scripts'   => __( 'Scripts', 'em-consent' ),
+			'politique' => __( 'Politique', 'em-consent' ),
 			'outils'    => __( 'Outils', 'em-consent' ),
 		);
 	}
@@ -77,7 +78,15 @@ class EM_Consent_Admin {
 			),
 			'position'             => array(
 				__( 'Position', 'em-consent' ),
-				'',
+				__( 'Sur cellulaire, les cartes passent en pleine largeur en bas. Au centre, la bannière peut masquer le contenu : préférez le bas.', 'em-consent' ),
+			),
+			'largeur'              => array( __( 'Largeur de la carte (px)', 'em-consent' ), __( 'Positions en carte, sur ordinateur.', 'em-consent' ) ),
+			'marge'                => array( __( 'Distance des bords de l’écran (px)', 'em-consent' ), '' ),
+			'taille_texte'         => array( __( 'Taille du texte (px)', 'em-consent' ), __( 'Titres et boutons suivent en proportion. 16 px par défaut.', 'em-consent' ) ),
+			'police'               => array( __( 'Police', 'em-consent' ), '' ),
+			'services'             => array(
+				__( 'Services utilisés', 'em-consent' ),
+				__( 'Ils sont décrits, avec leurs témoins, sur la page de politique. Ajouter un service redemande le consentement à tous. Noms et durées publiés par les éditeurs (relevé de 2026-11) : à vérifier dans leur politique.', 'em-consent' ),
 			),
 			'couleur_fond'         => array( __( 'Fond', 'em-consent' ), '' ),
 			'couleur_texte'        => array( __( 'Texte', 'em-consent' ), '' ),
@@ -167,6 +176,9 @@ class EM_Consent_Admin {
 			} else {
 				self::render_form( $tab );
 			}
+			if ( 'politique' === $tab ) {
+				self::render_policy_tools();
+			}
 			?>
 		</div>
 		<?php
@@ -183,6 +195,7 @@ class EM_Consent_Admin {
 			'importe'   => __( 'Réglages importés.', 'em-consent' ),
 			'invalide'  => __( 'Import refusé : le JSON n’est pas valide.', 'em-consent' ),
 			'reinit'    => __( 'Réglages réinitialisés.', 'em-consent' ),
+			'pages'     => __( 'Pages de politique créées ou complétées.', 'em-consent' ),
 		);
 		$msg      = isset( $_GET['em_consent_msg'] ) ? sanitize_key( wp_unslash( $_GET['em_consent_msg'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- affichage d'un avis seulement.
 		if ( isset( $messages[ $msg ] ) ) {
@@ -283,7 +296,11 @@ class EM_Consent_Admin {
 			$value       = $settings[ $key ];
 			$label       = isset( $labels[ $key ] ) ? $labels[ $key ][0] : $key;
 			$description = isset( $labels[ $key ] ) ? $labels[ $key ][1] : '';
-			echo '<tr><th scope="row"><label for="' . esc_attr( $id ) . '">' . esc_html( $label ) . '</label></th><td>';
+			if ( 'services' === $field['type'] ) {
+				echo '<tr><th scope="row">' . esc_html( $label ) . '</th><td>';
+			} else {
+				echo '<tr><th scope="row"><label for="' . esc_attr( $id ) . '">' . esc_html( $label ) . '</label></th><td>';
+			}
 			switch ( $field['type'] ) {
 				case 'bool':
 					printf( '<input type="checkbox" id="%1$s" name="%2$s" value="1"%3$s>', esc_attr( $id ), esc_attr( $field_name ), checked( (bool) $value, true, false ) );
@@ -293,14 +310,23 @@ class EM_Consent_Admin {
 					break;
 				case 'choice':
 					$choices = array(
-						'carte' => __( 'Carte en bas à gauche (pleine largeur sur cellulaire)', 'em-consent' ),
-						'barre' => __( 'Barre pleine largeur en bas', 'em-consent' ),
+						'bas-gauche' => __( 'Carte en bas à gauche', 'em-consent' ),
+						'bas-droite' => __( 'Carte en bas à droite', 'em-consent' ),
+						'bas-centre' => __( 'Carte en bas, centrée', 'em-consent' ),
+						'barre-bas'  => __( 'Barre pleine largeur en bas', 'em-consent' ),
+						'barre-haut' => __( 'Barre pleine largeur en haut', 'em-consent' ),
+						'centre'     => __( 'Carte au centre (déconseillé)', 'em-consent' ),
+						'theme'      => __( 'Celle du thème', 'em-consent' ),
+						'systeme'    => __( 'Police système', 'em-consent' ),
 					);
 					printf( '<select id="%1$s" name="%2$s">', esc_attr( $id ), esc_attr( $field_name ) );
 					foreach ( $field['choices'] as $choice ) {
 						printf( '<option value="%1$s"%2$s>%3$s</option>', esc_attr( $choice ), selected( $value, $choice, false ), esc_html( $choices[ $choice ] ?? $choice ) );
 					}
 					echo '</select>';
+					break;
+				case 'services':
+					self::render_services( $field_name, (array) $value );
 					break;
 				case 'color':
 					printf( '<input type="color" id="%1$s" name="%2$s" value="%3$s">', esc_attr( $id ), esc_attr( $field_name ), esc_attr( $value ) );
@@ -353,24 +379,113 @@ class EM_Consent_Admin {
 		$name   = EM_Consent_Settings::OPTION;
 		$textes = (array) EM_Consent_Settings::get( 'textes' );
 		echo '<p>' . esc_html__( 'Laissez un champ vide pour garder le texte par défaut, affiché en gris. Liens, gras et italique permis dans les champs de plusieurs lignes.', 'em-consent' ) . '</p>';
+		$groups = array(
+			'banniere'    => __( 'Bannière', 'em-consent' ),
+			'preferences' => __( 'Préférences et catégories', 'em-consent' ),
+			'contenu'     => __( 'Lien de gestion et contenus bloqués', 'em-consent' ),
+			'politique'   => __( 'Page de politique', 'em-consent' ),
+		);
+		$defs   = EM_Consent_Texts::definitions();
 		foreach ( EM_Consent_Texts::languages() as $lang => $language ) {
 			echo '<h2>' . esc_html( $language ) . ' <code>' . esc_html( $lang ) . '</code></h2>';
-			echo '<table class="form-table" role="presentation"><tbody>';
-			foreach ( EM_Consent_Texts::definitions() as $key => $def ) {
-				$id         = 'em-consent-' . $lang . '-' . $key;
-				$field_name = $name . '[textes][' . $lang . '][' . $key . ']';
-				$value      = isset( $textes[ $lang ][ $key ] ) ? (string) $textes[ $lang ][ $key ] : '';
-				$default    = EM_Consent_Texts::default_value( $key, $lang );
-				echo '<tr><th scope="row"><label for="' . esc_attr( $id ) . '">' . esc_html( $def['label'] ) . '</label></th><td>';
-				if ( 'html' === $def['type'] ) {
-					printf( '<textarea id="%1$s" name="%2$s" rows="3" class="large-text" placeholder="%3$s">%4$s</textarea>', esc_attr( $id ), esc_attr( $field_name ), esc_attr( $default ), esc_textarea( $value ) );
-				} else {
-					printf( '<input type="%1$s" id="%2$s" name="%3$s" class="large-text" value="%4$s" placeholder="%5$s">', 'url' === $def['type'] ? 'url' : 'text', esc_attr( $id ), esc_attr( $field_name ), esc_attr( $value ), esc_attr( $default ) );
+			foreach ( $groups as $group => $group_title ) {
+				echo '<h3>' . esc_html( $group_title ) . '</h3>';
+				echo '<table class="form-table" role="presentation"><tbody>';
+				foreach ( $defs as $key => $def ) {
+					if ( ( $def['groupe'] ?? 'politique' ) === $group ) {
+						self::render_text_field( $name, $lang, $key, $def, $textes );
+					}
 				}
-				echo '</td></tr>';
+				echo '</tbody></table>';
 			}
-			echo '</tbody></table>';
 		}
+	}
+
+	/**
+	 * Un champ de l'onglet Textes.
+	 *
+	 * @param string $name   Nom de l'option.
+	 * @param string $lang   Code de langue.
+	 * @param string $key    Clé du texte.
+	 * @param array  $def    Définition du texte.
+	 * @param array  $textes Textes enregistrés.
+	 */
+	private static function render_text_field( $name, $lang, $key, $def, $textes ) {
+		$id         = 'em-consent-' . $lang . '-' . $key;
+		$field_name = $name . '[textes][' . $lang . '][' . $key . ']';
+		$value      = isset( $textes[ $lang ][ $key ] ) ? (string) $textes[ $lang ][ $key ] : '';
+		$default    = EM_Consent_Texts::default_value( $key, $lang );
+		echo '<tr><th scope="row"><label for="' . esc_attr( $id ) . '">' . esc_html( $def['label'] ) . '</label></th><td>';
+		if ( 'html' === $def['type'] ) {
+			printf( '<textarea id="%1$s" name="%2$s" rows="3" class="large-text" placeholder="%3$s">%4$s</textarea>', esc_attr( $id ), esc_attr( $field_name ), esc_attr( $default ), esc_textarea( $value ) );
+		} else {
+			printf( '<input type="%1$s" id="%2$s" name="%3$s" class="large-text" value="%4$s" placeholder="%5$s">', 'url' === $def['type'] ? 'url' : 'text', esc_attr( $id ), esc_attr( $field_name ), esc_attr( $value ), esc_attr( $default ) );
+		}
+		echo '</td></tr>';
+	}
+
+	/**
+	 * Cases des services du catalogue, par catégorie. Les services détectés (GTM, GA4) sont cochés
+	 * d'office.
+	 *
+	 * @param string $field_name Nom du champ.
+	 * @param array  $value      Services cochés.
+	 */
+	private static function render_services( $field_name, $value ) {
+		$detected = EM_Consent_Policy::detected_services();
+		$titles   = array(
+			'mesure'    => __( 'Mesure d’audience', 'em-consent' ),
+			'marketing' => __( 'Marketing', 'em-consent' ),
+		);
+		foreach ( $titles as $category => $title ) {
+			echo '<fieldset style="margin-bottom:1em"><legend><strong>' . esc_html( $title ) . '</strong></legend>';
+			foreach ( EM_Consent_Policy::catalog() as $key => $service ) {
+				if ( $service['categorie'] !== $category ) {
+					continue;
+				}
+				$is_detected = in_array( $key, $detected, true );
+				$cookies     = wp_list_pluck( $service['temoins'], 0 );
+				printf(
+					'<label style="display:block;margin:.25em 0"><input type="checkbox" name="%1$s[]" value="%2$s"%3$s%4$s> %5$s%6$s%7$s</label>',
+					esc_attr( $field_name ),
+					esc_attr( $key ),
+					checked( $is_detected || in_array( $key, $value, true ), true, false ),
+					$is_detected ? ' disabled' : '',
+					esc_html( $service['nom'] ),
+					$cookies ? ' <code>' . esc_html( implode( ', ', $cookies ) ) . '</code>' : '',
+					$is_detected ? ' — ' . esc_html__( 'détecté (identifiant dans Général)', 'em-consent' ) : ''
+				);
+			}
+			echo '</fieldset>';
+		}
+	}
+
+	/**
+	 * Onglet Politique, sous le formulaire : page de politique et bouton de création.
+	 */
+	private static function render_policy_tools() {
+		echo '<h2>' . esc_html__( 'Page « Politique relative aux témoins »', 'em-consent' ) . '</h2>';
+		echo '<p>' . esc_html__( 'Le code court [em_consent_politique] affiche la politique, construite à partir des réglages, dans la langue de la page : catégories, services et leurs témoins, durée du choix, lien de gestion. La bannière renvoie à cette page.', 'em-consent' ) . '</p>';
+
+		$pages = array();
+		foreach ( EM_Consent_Texts::languages() as $lang => $language ) {
+			$page_id = EM_Consent_Policy::page_id( $lang );
+			if ( $page_id ) {
+				$pages[] = sprintf( '<a href="%1$s">%2$s</a> (%3$s)', esc_url( get_permalink( $page_id ) ), esc_html( get_the_title( $page_id ) ), esc_html( $language ) );
+			}
+		}
+		if ( $pages ) {
+			echo '<p>' . esc_html__( 'Pages actuelles :', 'em-consent' ) . ' ' . wp_kses_post( implode( ', ', $pages ) ) . '</p>';
+		}
+		?>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<input type="hidden" name="action" value="em_consent_outil">
+			<input type="hidden" name="outil" value="creer_pages">
+			<?php wp_nonce_field( 'em_consent_outil' ); ?>
+			<p class="description"><?php esc_html_e( 'Crée la page dans chaque langue active, traductions liées. Une langue qui a déjà sa page est gardée : rien n’est recréé ni écrasé.', 'em-consent' ); ?></p>
+			<?php submit_button( __( 'Créer les pages', 'em-consent' ), 'secondary', 'submit', false ); ?>
+		</form>
+		<?php
 	}
 
 	/**
@@ -446,6 +561,9 @@ class EM_Consent_Admin {
 			} else {
 				$msg = 'invalide';
 			}
+		} elseif ( 'creer_pages' === $tool ) {
+			EM_Consent_Policy::create_pages();
+			$msg = 'pages';
 		} elseif ( 'reinitialiser' === $tool ) {
 			$defaults             = EM_Consent_Settings::defaults();
 			$defaults['revision'] = $revision;
@@ -454,7 +572,7 @@ class EM_Consent_Admin {
 			$msg = 'reinit';
 		}
 
-		wp_safe_redirect( add_query_arg( 'em_consent_msg', $msg, admin_url( 'options-general.php?page=' . self::PAGE . '&tab=outils' ) ) );
+		wp_safe_redirect( add_query_arg( 'em_consent_msg', $msg, admin_url( 'options-general.php?page=' . self::PAGE . '&tab=' . ( 'creer_pages' === $tool ? 'politique' : 'outils' ) ) ) );
 		exit;
 	}
 }
