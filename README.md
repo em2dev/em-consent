@@ -1,6 +1,6 @@
 # EM Consent
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue) ![WordPress](https://img.shields.io/badge/WordPress-6.5%2B-21759b) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4) ![Licence](https://img.shields.io/badge/licence-GPL%20v2%2B-green)
+![Version](https://img.shields.io/badge/version-1.1.0-blue) ![WordPress](https://img.shields.io/badge/WordPress-6.5%2B-21759b) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4) ![Licence](https://img.shields.io/badge/licence-GPL%20v2%2B-green)
 
 Consentement aux témoins conforme à la **Loi 25 du Québec**, pour tous les sites WordPress d'emsolutions.ca, faits avec le core ou non.
 
@@ -13,6 +13,8 @@ Consentement aux témoins conforme à la **Loi 25 du Québec**, pour tous les si
 - [Mise en place sur un site](#mise-en-place-sur-un-site)
 - [Bloquer un script ou une iframe](#bloquer-un-script-ou-une-iframe)
 - [Google : mode de consentement v2, GTM et GA4](#google--mode-de-consentement-v2-gtm-et-ga4)
+- [Page de politique des témoins](#page-de-politique-des-témoins)
+- [Apparence](#apparence)
 - [Textes et langues](#textes-et-langues)
 - [Accessibilité](#accessibilité)
 - [Performance et cache](#performance-et-cache)
@@ -30,6 +32,8 @@ Consentement aux témoins conforme à la **Loi 25 du Québec**, pour tous les si
 - **Lien « Gestion des témoins »** : tout lien vers `#em-consent` (menu, bloc, pied de page) ou le code court `[em_consent_gestion]` rouvre les préférences.
 - **Durée du choix** réglable (12 mois par défaut). Le consentement est redemandé quand les catégories changent, ou d'un clic (« Redemander à tous »).
 - **Retrait du consentement** : GA4 est coupé, les envois de dernière minute des traqueurs connus sont retenus, les témoins de la catégorie retirée sont effacés et la page se recharge sans ses scripts.
+- **Page « Politique relative aux témoins »** générée à l'affichage à partir des réglages, créée d'un clic dans chaque langue, traductions liées.
+- **Apparence** : six positions (cartes en bas à gauche, à droite ou au centre, barres en haut ou en bas, centre), largeur, distance des bords, taille du texte, police, couleurs.
 - **Textes par langue**, modifiables par le client, en français et en anglais par défaut. Compatible WPML et Polylang, sans String Translation ni correctif.
 - **Accessibilité WCAG 2.2 AA** et **performance** : aucun jQuery, aucun appel externe, environ 4 Ko de JS et 2 Ko de CSS une fois compressés (gzip).
 - **Mises à jour** depuis les releases GitHub, par le mécanisme natif de WordPress.
@@ -110,6 +114,23 @@ EM Consent applique le mode **de base** : GTM et GA4 ne sont pas chargés avant 
 - **GTM** se charge à la première catégorie acceptée. Dans le conteneur, exigez le consentement voulu sur chaque balise (*Paramètres avancés → Paramètres d'autorisation → Exiger un consentement supplémentaire* : `analytics_storage` pour GA4, `ad_storage` pour Google Ads et Meta). L'événement `em_consent_update` (variables `em_consent_mesure`, `em_consent_marketing`) peut servir de déclencheur.
 - **GA4 seul** (sans GTM) se charge après l'accord à la mesure d'audience. Ne remplissez pas les deux si GA4 est déjà dans le conteneur : les visites seraient comptées deux fois (un avertissement s'affiche).
 
+## Page de politique des témoins
+
+**Réglages → Témoins → Politique** :
+
+1. Cochez les **services utilisés** (Clarity, Hotjar, Google Ads, Meta Pixel, LinkedIn, TikTok, YouTube, Vimeo, Google Maps). GTM et GA4 sont détectés d'après leur identifiant. Ajouter un service redemande le consentement à tous.
+2. **Créer les pages** : une page « Politique relative aux témoins » par langue active (WPML ou Polylang), traductions liées. Une langue qui a déjà sa page est gardée : rien n'est recréé ni écrasé.
+
+La page contient le code court `[em_consent_politique]` (attribut `niveau` pour le niveau des intertitres, 2 par défaut). Il est construit **à l'affichage**, dans la langue de la page : introduction, une section par catégorie avec le tableau de ses témoins (nom, fournisseur avec lien vers sa politique, finalité, durée), la durée du choix, le lien de gestion et la date de dernière mise à jour. Cette date change d'elle-même quand les catégories, les services, les identifiants ou la durée changent. La page suit donc les réglages sans jamais être regénérée.
+
+La bannière renvoie à cette page dans la langue de la visite (à défaut, à la page de confidentialité de WordPress ; une adresse donnée dans l'onglet Textes passe avant les deux).
+
+Les noms et durées des témoins viennent de la documentation des éditeurs (relevé de 2026-11) : ils peuvent changer. Le filtre `em_consent_services` corrige une durée ou ajoute un service. Cette page ne remplace pas la **politique de confidentialité** exigée par la Loi 25 (responsable de la protection des renseignements personnels, fins, droits, conservation…), qui reste à rédiger et à faire valider.
+
+## Apparence
+
+**Réglages → Témoins → Apparence** : position (carte en bas à gauche, à droite ou centrée ; barre pleine largeur en bas ou en haut ; carte au centre, déconseillée car elle peut masquer le contenu), largeur de la carte, distance des bords, taille du texte (14 à 22 px, titres et boutons en proportion), police (celle du thème ou la police système), couleurs du fond, du texte et des boutons, arrondi. Sur cellulaire, les cartes passent en pleine largeur en bas. Une barre en haut repousse la page au lieu de la couvrir.
+
 ## Textes et langues
 
 **Réglages → Témoins → Textes** affiche un bloc par langue active : celles de WPML, sinon de Polylang, sinon la langue du site. Un champ vide garde le texte par défaut, affiché en gris : français pour une langue `fr`, anglais pour les autres. Les textes de plusieurs lignes acceptent liens, gras et italique.
@@ -159,6 +180,7 @@ Le témoin `em_consent` (nécessaire, `SameSite=Lax`, `Secure` en HTTPS) contien
 | `em_consent_text_definitions` | Libellés et textes par défaut. |
 | `em_consent_text` | Un texte affiché : `( $texte, $cle, $langue )`. |
 | `em_consent_css_vars` | Variables CSS `--em-consent-*`. |
+| `em_consent_services` | Catalogue des services et de leurs témoins (page de politique). |
 | `em_consent_update_api` | Adresse de l'API des mises à jour (réponse au format des releases GitHub). |
 
 ## Limites connues
@@ -189,6 +211,7 @@ includes/class-em-consent-settings.php schéma des réglages (source unique), ne
 includes/class-em-consent-texts.php    textes par langue (WPML, Polylang, langue du site)
 includes/class-em-consent-front.php    <head>, bannière, préférences, code court
 includes/class-em-consent-blocker.php  scripts et iframes bloqués
+includes/class-em-consent-policy.php   catalogue des services, page de politique, création des pages
 includes/class-em-consent-admin.php    Réglages → Témoins
 includes/class-em-consent-updater.php  mises à jour depuis GitHub
 assets/js/em-consent.js                bannière, choix, déblocage, API

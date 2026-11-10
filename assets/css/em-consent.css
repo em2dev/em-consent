@@ -3,21 +3,35 @@
 .em-consent,
 .em-consent-preferences {
 	--_ombre: 0 4px 24px rgba(0, 0, 0, .18);
-	font-size: max(16px, 1rem);
+	font-family: var(--em-consent-police, inherit);
+	font-size: var(--em-consent-taille, 16px);
 	line-height: 1.5;
 	color: var(--em-consent-texte, #1f2328);
 	text-align: left;
 }
 
+/* La boîte de position : la page reste cliquable autour de la bannière. */
 .em-consent {
 	position: fixed;
 	z-index: 2147483000;
 	right: 0;
 	bottom: 0;
 	left: 0;
+	display: flex;
+	justify-content: center;
 	box-sizing: border-box;
-	padding: 12px;
+	padding: min(var(--em-consent-marge, 16px), 12px);
 	pointer-events: none;
+}
+
+.em-consent--barre-haut {
+	top: 0;
+	bottom: auto;
+}
+
+.em-consent--centre {
+	top: 0;
+	align-items: center;
 }
 
 .em-consent[hidden] {
@@ -26,6 +40,7 @@
 
 .em-consent__boite {
 	box-sizing: border-box;
+	width: 100%;
 	padding: 20px;
 	border: 1px solid rgba(0, 0, 0, .12);
 	border-radius: var(--em-consent-arrondi, 8px);
@@ -97,20 +112,32 @@
 	outline-offset: 2px !important;
 }
 
-/* Carte en bas à gauche sur ordinateur ; pleine largeur sur cellulaire. */
+/* Cellulaire : pleine largeur, en bas (ou en haut, ou au centre). Ordinateur : position choisie. */
 @media (min-width: 640px) {
 	.em-consent {
-		padding: 16px;
+		padding: var(--em-consent-marge, 16px);
 	}
 
 	.em-consent--carte .em-consent__boite {
-		max-width: 440px;
+		max-width: var(--em-consent-largeur, 440px);
+	}
+
+	.em-consent--bas-gauche {
+		justify-content: flex-start;
+	}
+
+	.em-consent--bas-droite {
+		justify-content: flex-end;
 	}
 
 	.em-consent--barre .em-consent__boite {
 		display: flex;
 		align-items: center;
 		gap: 24px;
+	}
+
+	.em-consent--barre .em-consent__texte {
+		flex: 1 1 auto;
 	}
 
 	.em-consent--barre .em-consent__message {
@@ -310,6 +337,44 @@
 	--em-consent-bouton-texte: #fff;
 	--em-consent-texte: #1f2328;
 	flex: none;
+}
+
+/* Page de politique ([em_consent_politique]) : le thème garde la main sur la typographie. */
+
+.em-consent-politique__tableau {
+	margin: 0 0 1.5em;
+	overflow-x: auto;
+}
+
+.em-consent-politique table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+/* Légende du tableau pour les lecteurs d'écran : l'intertitre la montre déjà. */
+.em-consent-politique caption {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+}
+
+.em-consent-politique th,
+.em-consent-politique td {
+	padding: .5em .75em;
+	border: 1px solid rgba(127, 127, 127, .35);
+	text-align: left;
+	vertical-align: top;
+}
+
+.em-consent-politique code {
+	white-space: nowrap;
+}
+
+.em-consent-politique__maj {
+	font-size: .875em;
 }
 
 @media print {

@@ -2,6 +2,21 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions selon [SemVer](https://semver.org/lang/fr/).
 
+## [1.1.0] — 2026-11-10
+
+### Ajouté
+
+- Page « Politique relative aux témoins » : code court `[em_consent_politique]` construit à l'affichage dans la langue de la page (catégories, tableau des témoins par service, durée du choix, lien de gestion, date de mise à jour automatique).
+- Onglet Politique : services utilisés (catalogue de 11 services, GTM et GA4 détectés) et bouton « Créer les pages », une par langue active, traductions WPML ou Polylang liées, sans rien recréer.
+- Filtre `em_consent_services`.
+- Apparence : six positions (cartes en bas à gauche, à droite, centrée ; barres en bas ou en haut ; centre), largeur de la carte, distance des bords, taille du texte, police du thème ou système.
+- Textes de la page de politique, modifiables par langue ; onglet Textes regroupé par section.
+
+### Modifié
+
+- La bannière renvoie à la page de politique des témoins dans la langue de la visite, avec son titre comme texte du lien.
+- Ajouter un service redemande le consentement à tous.
+
 ## [1.0.0] — 2026-11-10
 
 Première version.
